@@ -1,0 +1,12 @@
+.venv/
+venv/
+myenv/
+node_modules/
+dist/
+__pycache__/
+*.py[cod]
+backend/eldercare.db
+backend/*.db
+backend/artifacts/*.json
+backend/artifacts/*.joblib
+.env
