@@ -3,3 +3,40 @@
 @media(max-width:1200px){.home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sidebar{width:236px}.main-content{margin-left:236px}.dashboard-inner{padding-left:24px;padding-right:24px}}
 @media(max-width:850px){.auth-shell{grid-template-columns:1fr}.auth-left{display:none}.auth-right{min-height:100vh;padding:25px}.mobile-brand{display:flex;margin-bottom:45px}.auth-card{max-width:430px}.auth-heading h2{font-size:28px}.sidebar{transform:translateX(-100%);transition:transform .22s;width:280px;box-shadow:none}.sidebar.sidebar-open{transform:translateX(0);box-shadow:10px 0 40px #18291c20}.close-sidebar{display:grid;margin-left:auto}.mobile-scrim{display:block;position:fixed;inset:0;background:#17241d65;z-index:20}.main-content{margin-left:0}.dashboard-header{height:62px;padding:0 18px}.breadcrumbs,.header-right .secure-label{display:none}.mobile-head{display:flex;align-items:center;gap:8px}.mobile-head .brand{font-size:15px}.mobile-head .brand-mark{width:31px;height:31px}.menu-btn{padding:5px}.dashboard-inner{padding:27px 18px}.home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:570px){.dashboard-inner{padding:23px 13px}.welcome-row{align-items:flex-start}.welcome-row h1{font-size:25px}.welcome-row p{font-size:12px;line-height:1.6;max-width:250px}.edit-profile{font-size:0;padding:10px}.edit-profile svg{width:17px;height:17px}.search-panel{padding:16px 13px}.search-panel-title h3{font-size:14px}.search-panel-title p{font-size:10px;line-height:1.5}.search-input-wrap{flex-wrap:wrap;padding:8px}.search-input-wrap>svg{margin-left:4px}.search-input-wrap input{width:calc(100% - 40px);flex:auto}.search-input-wrap .btn{width:100%;margin-top:3px}.personal-tags{gap:6px}.personal-tags>span,.adaptive-toggle{font-size:9px}.results-heading{align-items:flex-start}.results-heading h2{font-size:20px}.results-heading p{max-width:240px;line-height:1.6}.result-actions .btn{font-size:0;padding:9px}.result-actions .btn svg{width:17px;height:17px}.home-grid{grid-template-columns:1fr;gap:12px}.home-card{padding:16px}.home-card h3{font-size:16px}.home-location{min-height:auto}.bottom-insight{align-items:flex-start;padding:13px}.bottom-insight p{font-size:10px}.metric-mini{display:none}.footer{flex-direction:column;line-height:1.6}.onboard-main{padding:35px 13px}.topbar{height:65px;padding:0 16px}.onboard-intro{margin-bottom:24px}.onboard-intro h1{font-size:30px}.onboard-card{padding:20px 17px;border-radius:16px}.step-content{padding:25px 0}.step-content h2{font-size:21px}.choice-grid,.multi-grid{grid-template-columns:1fr}.choice{min-height:49px}.onboard-actions .btn{font-size:11px;padding:11px 12px}.onboard-foot{font-size:10px}.auth-right{padding:20px}.auth-heading h2{font-size:26px}.loading-grid{grid-template-columns:1fr}.skeleton-card{height:270px}}
+
+/* Per-search recommendation evaluation */
+.evaluation-panel{background:#fff;border:1px solid #dfe8df;border-radius:14px;padding:17px 19px;margin:0 0 18px;box-shadow:0 4px 15px #253d2d04}.evaluation-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.evaluation-heading h3{font:700 15px Manrope,sans-serif;color:var(--ink);margin:6px 0 4px}.evaluation-heading p{font-size:10px;line-height:1.6;color:#829087;margin:0}.evaluation-status{white-space:nowrap;border-radius:20px;padding:6px 9px;font-size:9px;font-weight:700;background:#f4f5f3;color:#78847a}.evaluation-status.available{background:#edf5ef;color:#397153}.evaluation-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.evaluation-metric{border:1px solid #edf0eb;background:#fafbf9;border-radius:9px;padding:11px 12px;display:grid;gap:5px}.evaluation-metric span{font-size:10px;color:#7d8a80}.evaluation-metric strong{font:800 22px Manrope,sans-serif;color:#35694b}.evaluation-note{font-size:9px;line-height:1.6;color:#8a958d;margin-top:11px}
+@media(max-width:570px){.evaluation-panel{padding:14px}.evaluation-heading{display:block}.evaluation-status{display:inline-block;margin-top:9px}.evaluation-metrics{gap:6px}.evaluation-metric{padding:9px 7px}.evaluation-metric span{font-size:9px}.evaluation-metric strong{font-size:19px}.evaluation-note{font-size:8px}}
+
+
+/* Google Maps link on each recommendation card */
+.google-maps-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 9px;
+  padding: 9px 12px;
+  border: 1px solid #d8e8df;
+  border-radius: 9px;
+  background: #f0f7f2;
+  color: #286b55;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.google-maps-link:hover {
+  background: #286b55;
+  color: #fff;
+  border-color: #286b55;
+  transform: translateY(-1px);
+}
+.google-maps-link:focus-visible {
+  outline: 3px solid #9bc8ad;
+  outline-offset: 2px;
+}
+.google-maps-link svg { flex-shrink: 0; }
+.google-maps-link svg:last-child { margin-left: 2px; }

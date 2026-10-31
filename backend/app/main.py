@@ -184,15 +184,228 @@ def make_candidates(db, body, user, profile):
         scored.sort(key=lambda x:x["final_score"],reverse=True)
     return scored[:body.top_n], query
 
+def evaluation_key(query: str, body: RecommendIn, profile=None) -> str:
+    """
+    Creates a stable identifier for a search.
+    Adaptive and baseline rankings share the same evaluation history.
+    """
+    payload = {
+        "query": re.sub(r"\s+", " ", query).strip().casefold(),
+        "state": body.state,
+        "district": body.district,
+        "facility_type": body.facility_type,
+        "care_type": (
+            body.care_type
+            if body.care_type != "Any"
+            else (profile.care_type if profile else "Any")
+        ),
+        "gender": (
+            body.gender
+            if body.gender != "Any"
+            else (profile.gender if profile else "Any")
+        ),
+        "management": (
+            body.management
+            if body.management != "Any"
+            else (profile.management if profile else "Any")
+        )
+    }
+
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        ensure_ascii=False
+    )
+
+
+def ranking_metrics(ranked_ids, feedback_rows, k=5):
+    """
+    Calculates Precision@K, Recall@K and NDCG@K.
+
+    Rating interpretation:
+        1–2 = Not relevant
+        3   = Neutral
+        4–5 = Relevant
+
+    Only explicitly rated homes are treated as judged items.
+    Unrated homes are not automatically considered irrelevant.
+    """
+
+    # Keep the latest rating for each home.
+    by_home = {}
+
+    for row in feedback_rows:
+        by_home[row.home_id] = row.rating
+
+    # Preserve actual ranking positions, including unrated positions.
+    top_ids = ranked_ids[:k]
+
+    judged = [
+        (rank, home_id, by_home[home_id])
+        for rank, home_id in enumerate(top_ids)
+        if home_id in by_home
+    ]
+
+    relevant_retrieved = sum(
+        1 for _, _, rating in judged if rating >= 4
+    )
+
+    relevant_total = sum(
+        1 for rating in by_home.values() if rating >= 4
+    )
+
+    # Precision over explicitly judged items in the top K.
+    precision = (
+        relevant_retrieved / len(judged)
+        if judged else None
+    )
+
+    # Recall over all relevant rated homes for this search.
+    recall = (
+        relevant_retrieved / relevant_total
+        if relevant_total else None
+    )
+
+    # Graded relevance for NDCG.
+    def gain(rating):
+        return {
+            1: 0,
+            2: 0,
+            3: 1,
+            4: 2,
+            5: 3
+        }[rating]
+
+    # DCG uses the actual rank position.
+    dcg = sum(
+        (2 ** gain(rating) - 1) / np.log2(rank + 2)
+        for rank, _, rating in judged
+    )
+
+    # Ideal DCG sorts all judged ratings by relevance.
+    ideal = sorted(
+        [gain(rating) for rating in by_home.values()],
+        reverse=True
+    )[:k]
+
+    idcg = sum(
+        (2 ** grade - 1) / np.log2(rank + 2)
+        for rank, grade in enumerate(ideal)
+    )
+
+    ndcg = dcg / idcg if idcg > 0 else None
+
+    return {
+        "k": k,
+        "precision_at_k": (
+            round(precision, 4) if precision is not None else None
+        ),
+        "recall_at_k": (
+            round(recall, 4) if recall is not None else None
+        ),
+        "ndcg_at_k": (
+            round(ndcg, 4) if ndcg is not None else None
+        ),
+        "judged_in_top_k": len(judged),
+        "relevant_in_top_k": relevant_retrieved,
+        "relevant_judgements_in_history": relevant_total,
+        "status": (
+            "available" if judged else "awaiting_feedback"
+        ),
+        "basis": (
+            "Explicit user ratings: 4–5 relevant, "
+            "1–2 not relevant, 3 neutral. "
+            "These are feedback-based observed metrics, "
+            "not an independently labelled benchmark."
+        )
+    }
+
 @app.post("/api/recommendations")
-def recommendations(body: RecommendIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    profile=db.scalar(select(Profile).where(Profile.user_id==user.id))
-    scored, query=make_candidates(db,body,user,profile)
-    results=[]
+def recommendations(
+    body: RecommendIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    profile = db.scalar(
+        select(Profile).where(Profile.user_id == user.id)
+    )
+
+    # Generate recommendations using your existing RS/RL pipeline.
+    scored, query = make_candidates(
+        db, body, user, profile
+    )
+
+    # Convert recommendation results into API response objects.
+    results = []
+
     for item in scored:
-        h=item["home"]
-        results.append({"id":h.id,"home_name":h.home_name,"state":h.state,"district":h.district,"city":h.city,"address":h.address,"facility_type":h.facility_type or "Not listed","care_type":h.care_type or "Not listed","gender":h.gender or "Not listed","management":h.management or "Not listed","capacity":h.capacity,"telephone":h.telephone or "","email":h.email or "","source":h.source or "","similarity_score":round(item["similarity"],4),"match_score":round(item["final_score"],4),"rl_score":None if item["rl_score"] is None else round(item["rl_score"],4),"reason":reason_for(h,profile,item),"warnings":warnings_for(h)})
-    return {"results":results,"query":query,"count":len(results),"adaptive":body.adaptive,"message":"No homes match all selected filters. Try widening location or optional preferences." if not results else None}
+        h = item["home"]
+
+        results.append({
+            "id": h.id,
+            "home_name": h.home_name,
+            "state": h.state,
+            "district": h.district,
+            "city": h.city,
+            "address": h.address,
+            "facility_type": h.facility_type or "Not listed",
+            "care_type": h.care_type or "Not listed",
+            "gender": h.gender or "Not listed",
+            "management": h.management or "Not listed",
+            "capacity": h.capacity,
+            "telephone": h.telephone or "",
+            "email": h.email or "",
+            "source": h.source or "",
+            "similarity_score": round(
+                item["similarity"], 4
+            ),
+            "match_score": round(
+                item["final_score"], 4
+            ),
+            "rl_score": (
+                None if item["rl_score"] is None
+                else round(item["rl_score"], 4)
+            ),
+            "reason": reason_for(h, profile, item),
+            "warnings": warnings_for(h)
+        })
+
+    # Generate the search identifier.
+    key = evaluation_key(query, body, profile)
+
+    # Retrieve this user's feedback history.
+    history = db.scalars(
+        select(Feedback)
+        .where(Feedback.user_id == user.id)
+        .order_by(Feedback.id.asc())
+    ).all()
+
+    # Only use feedback belonging to this search.
+    matching_feedback = [
+        row for row in history
+        if (row.context_json or {}).get("evaluation_key") == key
+    ]
+
+    # Calculate metrics for the current ranking.
+    evaluation = ranking_metrics(
+        [r["id"] for r in results],
+        matching_feedback,
+        k=5
+    )
+
+    return {
+        "results": results,
+        "query": query,
+        "evaluation_key": key,
+        "evaluation": evaluation,
+        "count": len(results),
+        "adaptive": body.adaptive,
+        "message": (
+            "No homes match all selected filters. "
+            "Try widening location or optional preferences."
+            if not results else None
+        )
+    }
 
 def reason_for(h, profile, item):
     reasons=[]

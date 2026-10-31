@@ -284,6 +284,70 @@ A full MDP environment, Bellman-equation-based value functions, policy iteration
 
 Compare static content-based ranking with adaptive ranking using the same queries and eligibility constraints.
 
+## Search-Level Recommendation Evaluation
+
+ElderCare Finder displays ranking evaluation metrics alongside
+each recommendation search.
+
+The evaluation is based on explicit user feedback collected
+for the same search query and filter combination.
+
+### Metrics
+
+**1. Precision@5**
+
+Measures the proportion of explicitly rated homes in the
+top five recommendations that users marked relevant.
+
+Precision@5 = Relevant rated homes in top 5 /
+              Total rated homes in top 5
+
+**2. Recall@5**
+
+Measures the proportion of all relevant rated homes in the
+search feedback history that appear in the top five.
+
+Recall@5 = Relevant rated homes in top 5 /
+           Total relevant rated homes in search history
+
+**3. NDCG@5**
+
+Measures ranking quality while considering the position
+and graded relevance of each rated recommendation.
+
+Higher NDCG indicates that more relevant homes appear
+towards the top of the ranking.
+
+### Feedback relevance mapping
+
+| Rating | Interpretation | NDCG relevance grade |
+|---|---|---:|
+| 1 | Not relevant | 0 |
+| 2 | Not relevant | 0 |
+| 3 | Neutral | 1 |
+| 4 | Relevant | 2 |
+| 5 | Highly relevant | 3 |
+
+### Evaluation workflow
+
+1. User performs a search.
+2. The recommender generates and ranks eligible homes.
+3. The evaluation panel displays available metrics.
+4. User rates recommended homes from 1 to 5.
+5. Feedback is stored with the search identifier.
+6. Metrics are recalculated after feedback is submitted.
+
+### Important limitations
+
+- These are feedback-based observed metrics.
+- Unrated homes are not automatically considered irrelevant.
+- Recall is limited to relevant homes rated in the matching
+  search history.
+- Ratings are subjective and self-selected.
+- These values are not an independent ground-truth benchmark.
+- A separate relevance-labelled test dataset is needed for
+  rigorous offline evaluation.
+
 ### RS metrics
 
 - **Precision@K:** proportion of the top K results judged relevant.
